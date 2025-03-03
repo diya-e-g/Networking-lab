@@ -7,6 +7,11 @@
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
+gcc server.c -o server
+gcc client.c -o client
+./server
+./client
+
 int main() {
     int client_socket;
     struct sockaddr_in server_addr;
