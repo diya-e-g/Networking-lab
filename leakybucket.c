@@ -1,61 +1,59 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
 
-#define WINDOW_SIZE 4
-#define TOTAL_FRAMES 10
-#define LOSS_PROBABILITY 20
+void leaky_bucket(int bucket_capacity, int leak_rate, int num_packets, int packets[]) {
+    int bucket = 0; // Current bucket level
 
-int send_frame(int frame_number) {
-    printf("Sending frame %d...\n", frame_number);
-    sleep(1);
-    int rand_value = rand() % 100;
-    if (rand_value < LOSS_PROBABILITY) {
-        printf("Frame %d lost during transmission!\n", frame_number);
-        return 0;
-    }
-    printf("Frame %d sent successfully.\n", frame_number);
-    return 1;
-}
+    printf("Time\tIncoming\tBucket\tLeaked\tRemaining\n");
+    for (int i = 0; i < num_packets; i++) {
+        printf("%d%10d", i + 1, packets[i]);
 
-int receive_ack(int frame_number) {
-    printf("Receiving acknowledgment for frame %d...\n", frame_number);
-    sleep(1);
-    int rand_value = rand() % 100;
-    if (rand_value < LOSS_PROBABILITY) {
-        printf("Acknowledgment for frame %d lost!\n", frame_number);
-        return 0;
-    }
-    printf("Acknowledgment for frame %d received.\n", frame_number);
-    return 1;
-}
-
-void go_back_n_arq() {
-    int base = 0;
-
-    while (base < TOTAL_FRAMES) {
-        int i;
-        for (i = base; i < base + WINDOW_SIZE && i < TOTAL_FRAMES; i++) {
-            if (!send_frame(i)) {
-                printf("Retransmitting from frame %d due to loss.\n", base);
-                break;
-            }
+        // Add incoming packets to the bucket
+        bucket += packets[i];
+        if (bucket > bucket_capacity) {
+            printf("%10d(Overflowed, Dropped %d)", bucket_capacity, bucket - bucket_capacity);
+            bucket = bucket_capacity; // Discard excess packets
+        } else {
+            printf("%10d", bucket);
         }
-        
-        for (int j = base; j < i; j++) {
-            if (!receive_ack(j)) {
-                printf("Acknowledgment lost for frame %d, retransmitting from frame %d.\n", j, base);
-                break;
-            }
-            base++;
-        }
+
+        // Leak out packets at the constant rate
+        int leaked = (bucket >= leak_rate) ? leak_rate : bucket;
+        bucket -= leaked;
+
+        printf("%10d%10d\n", leaked, bucket);
     }
-    printf("All frames sent and acknowledged successfully.\n");
+
+    // Empty the bucket after all packets are processed
+    int time = num_packets + 1;
+    while (bucket > 0) {
+        int leaked = (bucket >= leak_rate) ? leak_rate : bucket;
+        printf("%d%10d%10d%10d%10d\n", time,0,bucket, leaked, bucket - leaked);
+        bucket -= leaked;
+        time++;
+    }
 }
 
 int main() {
-    srand(time(0));
-    go_back_n_arq();
+    int bucket_capacity, leak_rate, num_packets;
+
+    printf("Enter the bucket capacity: ");
+    scanf("%d", &bucket_capacity);
+
+    printf("Enter the leak rate: ");
+    scanf("%d", &leak_rate);
+
+    printf("Enter the number of packets: ");
+    scanf("%d", &num_packets);
+
+    int packets[num_packets];
+    printf("Enter the size of each incoming packet:\n");
+    for (int i = 0; i < num_packets; i++) {
+        scanf("%d", &packets[i]);
+    }
+
+    printf("\nLeaky Bucket Simulation:\n");
+    leaky_bucket(bucket_capacity, leak_rate, num_packets, packets);
+
     return 0;
 }
