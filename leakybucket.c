@@ -1,41 +1,47 @@
 #include <stdio.h>
-#include <stdlib.h>
 
-void leaky_bucket(int bucket_capacity, int leak_rate, int num_packets, int packets[]) {
-    int bucket = 0; // Current bucket level
+void leaky_bucket(int bucket_capacity, int leak_rate, int num_of_packets, int packets[])
+{
+    int bucket = 0;
+    printf("Time\tIncoming\tBucket\t\tLeaked\tRemaining\n");
 
-    printf("Time\tIncoming\tBucket\tLeaked\tRemaining\n");
-    for (int i = 0; i < num_packets; i++) {
-        printf("%d%10d", i + 1, packets[i]);
-
-        // Add incoming packets to the bucket
+    for (int i = 0; i < num_of_packets; i++)
+    {
+        printf("%d\t%d\t\t", i + 1, packets[i]);
         bucket += packets[i];
-        if (bucket > bucket_capacity) {
-            printf("%10d(Overflowed, Dropped %d)", bucket_capacity, bucket - bucket_capacity);
-            bucket = bucket_capacity; // Discard excess packets
-        } else {
-            printf("%10d", bucket);
+
+        if (bucket > bucket_capacity)
+        {
+            printf("%d (Overflowed, Dropped %d)\t", bucket_capacity, bucket - bucket_capacity);
+            bucket = bucket_capacity;
+        }
+        else
+        {
+            printf("%d\t\t", bucket);
         }
 
-        // Leak out packets at the constant rate
         int leaked = (bucket >= leak_rate) ? leak_rate : bucket;
         bucket -= leaked;
 
-        printf("%10d%10d\n", leaked, bucket);
+        printf("%d\t%d\n", leaked, bucket);
     }
 
-    // Empty the bucket after all packets are processed
-    int time = num_packets + 1;
-    while (bucket > 0) {
+    int time = num_of_packets + 1;
+    while (bucket > 0)
+    {
         int leaked = (bucket >= leak_rate) ? leak_rate : bucket;
-        printf("%d%10d%10d%10d%10d\n", time,0,bucket, leaked, bucket - leaked);
+        printf("%d\t%d\t\t%d\t\t%d\t%d\n", time, 0, bucket, leaked, bucket - leaked);
         bucket -= leaked;
         time++;
     }
 }
 
-int main() {
-    int bucket_capacity, leak_rate, num_packets;
+int main()
+{
+    int num_of_packets, bucket_capacity, leak_rate;
+
+    printf("Enter the total number of packets: ");
+    scanf("%d", &num_of_packets);
 
     printf("Enter the bucket capacity: ");
     scanf("%d", &bucket_capacity);
@@ -43,17 +49,15 @@ int main() {
     printf("Enter the leak rate: ");
     scanf("%d", &leak_rate);
 
-    printf("Enter the number of packets: ");
-    scanf("%d", &num_packets);
+    int packets[num_of_packets];
 
-    int packets[num_packets];
-    printf("Enter the size of each incoming packet:\n");
-    for (int i = 0; i < num_packets; i++) {
+    printf("Enter the packet sizes:\n");
+    for (int i = 0; i < num_of_packets; i++)
+    {
         scanf("%d", &packets[i]);
     }
 
-    printf("\nLeaky Bucket Simulation:\n");
-    leaky_bucket(bucket_capacity, leak_rate, num_packets, packets);
+    leaky_bucket(bucket_capacity, leak_rate, num_of_packets, packets);
 
     return 0;
 }
