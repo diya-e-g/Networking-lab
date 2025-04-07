@@ -3,59 +3,47 @@
 #include <time.h>
 #include <unistd.h>
 
-#define WINDOW_SIZE 4
-#define TOTAL_FRAMES 10
-#define LOSS_PROBABILITY 20
-
-int send_frame(int frame_number) {
-    printf("Sending frame %d...\n", frame_number);
-    sleep(1);
-    int rand_value = rand() % 100;
-    if (rand_value < LOSS_PROBABILITY) {
-        printf("Frame %d lost during transmission!\n", frame_number);
-        return 0;
-    }
-    printf("Frame %d sent successfully.\n", frame_number);
-    return 1;
-}
-
-int receive_ack(int frame_number) {
-    printf("Receiving acknowledgment for frame %d...\n", frame_number);
-    sleep(1);
-    int rand_value = rand() % 100;
-    if (rand_value < LOSS_PROBABILITY) {
-        printf("Acknowledgment for frame %d lost!\n", frame_number);
-        return 0;
-    }
-    printf("Acknowledgment for frame %d received.\n", frame_number);
-    return 1;
-}
-
-void go_back_n_arq() {
-    int base = 0;
-
-    while (base < TOTAL_FRAMES) {
-        int i;
-        for (i = base; i < base + WINDOW_SIZE && i < TOTAL_FRAMES; i++) {
-            if (!send_frame(i)) {
-                printf("Retransmitting from frame %d due to loss.\n", base);
+#define FAIL 30
+int main()
+{
+    int no_of_frames, window;
+    printf("Enter the number of frames to be sent: ");
+    scanf("%d",&no_of_frames);
+    printf("Enter the window size:");
+    scanf("%d",&window);
+    int base=1;
+    while(base<=no_of_frames)
+    {
+        for(int i=base;i<no_of_frames && i<base+window;i++)
+        {
+            printf("Sender: Frame %d is sent.\n",i);
+            sleep(1);
+        }
+        int failed_frame=0;
+        for(int i=base;i<no_of_frames && i<base+window;i++)
+        {
+            if(rand()%100>FAIL)
+            {
+                printf("Receiver: ACK for frame %d received\n",i);
+            }
+            else{
+                printf("Receiver: ACK for frame %d is lost. Go back n triggered\n",i);
+                failed_frame=i;
                 break;
             }
         }
-        
-        for (int j = base; j < i; j++) {
-            if (!receive_ack(j)) {
-                printf("Acknowledgment lost for frame %d, retransmitting from frame %d.\n", j, base);
-                break;
-            }
-            base++;
+        if(failed_frame)
+        {
+            base=failed_frame;
+            printf("Retransmitting from frame %d\n",base);
+            sleep(1);
+        }
+        else{
+            base+=window;
+            printf("Sliding window to %d\n",base);
         }
     }
-    printf("All frames sent and acknowledged successfully.\n");
-}
-
-int main() {
-    srand(time(0));
-    go_back_n_arq();
+    printf("All the frames are successfully sent.\n");
     return 0;
+
 }
