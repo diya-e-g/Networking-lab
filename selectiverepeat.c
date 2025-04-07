@@ -3,62 +3,82 @@
 #include <time.h>
 #include <unistd.h>
 
-#define WINDOW_SIZE 4
-#define TOTAL_FRAMES 10
-#define LOSS_PROBABILITY 20
+#define LOSS 20
 
-int send_frame(int frame_number) {
-    printf("Sending frame %d...\n", frame_number);
+int send(int frame)
+{
+    printf("Sender: Sending frame %d..\n",frame);
     sleep(1);
-    int rand_value = rand() % 100;
-    if (rand_value < LOSS_PROBABILITY) {
-        printf("Frame %d lost during transmission!\n", frame_number);
+    int random=rand()%100;
+    if(random<LOSS)
+    {
+        printf("Frame %d lost during transmission..\n",frame);
         return 0;
     }
-    printf("Frame %d sent successfully.\n", frame_number);
-    return 1;
+    else{
+        printf("Frame %d successfully sent..\n",frame);
+        return 1;
+    }
 }
 
-int receive_ack(int frame_number) {
-    printf("Receiving acknowledgment for frame %d...\n", frame_number);
+int send_ack(int frame)
+{
+    printf("Receiver: Sending ACK for frame %d..\n",frame);
     sleep(1);
-    int rand_value = rand() % 100;
-    if (rand_value < LOSS_PROBABILITY) {
-        printf("Acknowledgment for frame %d lost!\n", frame_number);
+    int random=rand()%100;
+    if(random<LOSS)
+    {
+        printf("ACK for frame %d lost during transmission..\n",frame);
         return 0;
     }
-    printf("Acknowledgment for frame %d received.\n", frame_number);
-    return 1;
+    else{
+        printf("ACK for frame %d successfully sent..\n",frame);
+        return 1;
+    }
 }
 
-void selective_repeat_arq() {
-    int sent_frames[TOTAL_FRAMES] = {0};
-    int ack_received[TOTAL_FRAMES] = {0};
-    int base = 0;
+int main()
+{
+    srand(time(0));
+    int no_of_frames, window;
+    
+    printf("Enter the total number of frames to be sent:");
+    scanf("%d",&no_of_frames);
+    int sent_frames[no_of_frames];
+    int receive_ack[no_of_frames];
+    for(int i=0;i<no_of_frames;i++)
+    {
+        sent_frames[i]=0;
+        receive_ack[i]=0;
 
-    while (base < TOTAL_FRAMES) {
-        for (int i = base; i < base + WINDOW_SIZE && i < TOTAL_FRAMES; i++) {
-            if (!sent_frames[i]) {
-                sent_frames[i] = send_frame(i);
+    }
+    printf("Enter the window size: ");
+    scanf("%d",&window);
+    int base=0;
+    while(base<no_of_frames)
+    {
+        for(int i=base;i<base+window && i<no_of_frames;i++)
+        {
+            if(!sent_frames[i])
+            {
+                sent_frames[i]=send(i);
+            }
+        }
+        for(int i=base;i<base+window && i<no_of_frames;i++)
+        {
+            if(sent_frames[i] && !receive_ack[i])
+            {
+                receive_ack[i]=send_ack(i);
             }
         }
 
-        for (int i = base; i < base + WINDOW_SIZE && i < TOTAL_FRAMES; i++) {
-            if (sent_frames[i] && !ack_received[i]) {
-                ack_received[i] = receive_ack(i);
-            }
-        }
-
-        while (base < TOTAL_FRAMES && ack_received[base]) {
-            printf("Sliding window forward. Frame %d fully acknowledged.\n", base);
+        while(base<no_of_frames && receive_ack[base])
+        {
+            printf("Sliding window forward. %d fully acknowledged.\n",base);
             base++;
         }
     }
-    printf("All frames sent and acknowledged successfully.\n");
-}
+    printf("All the frames are sent and acknowledged");
 
-int main() {
-    srand(time(0));
-    selective_repeat_arq();
     return 0;
 }
